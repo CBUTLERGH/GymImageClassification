@@ -41,12 +41,13 @@
       console.log("Model and labels loaded");
     }
 
-    async function setupCamera() {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" }, // Front-facing camera
-        audio: false
-      });
-      webcamElement.srcObject = stream;
+async function setupCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" },
+      audio: false
+    });
+    webcamElement.srcObject = stream;
 
       return new Promise((resolve) => {
         webcamElement.onloadedmetadata = () => {
