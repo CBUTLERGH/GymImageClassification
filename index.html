@@ -10,33 +10,44 @@
   <input type="file" accept="image/*" capture="user" onchange="predictImage(event)">
   <p id="prediction">Prediction will appear here</p>
 
-  <script>
-    let model;
+<script>
+  let model;
+  let labels = [];
 
-    async function loadModel() {
-      model = await tf.loadLayersModel('https://CBUTLERGH.github.io/GymImageClassification/model/model.json');
-      console.log("Model loaded");
-    }
+  async function loadModel() {
+    // Load model
+    model = await tf.loadLayersModel('https://CBUTLERGH.github.io/GymImageClassification/model.json');
+    console.log("Model loaded");
 
-    async function predictImage(event) {
-      const img = document.createElement('img');
-      img.src = URL.createObjectURL(event.target.files[0]);
-      await img.decode();
+    // Load labels
+    const metadataURL = 'https://CBUTLERGH.github.io/GymImageClassification/metadata.json';
+    const response = await fetch(metadataURL);
+    const metadata = await response.json();
+    labels = metadata.labels;
+    console.log("Labels loaded:", labels);
+  }
 
-      const tensor = tf.browser.fromPixels(img)
-        .resizeNearestNeighbor([224, 224]) // resize to match model input
-        .toFloat()
-        .expandDims();
+  async function predictImage(event) {
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(event.target.files[0]);
+    await img.decode();
 
-      const prediction = await model.predict(tensor).data();
+    const tensor = tf.browser.fromPixels(img)
+      .resizeNearestNeighbor([224, 224])
+      .toFloat()
+      .expandDims();
 
-      // Show highest prediction
-      const topIndex = prediction.indexOf(Math.max(...prediction));
-      document.getElementById('prediction').innerText = `Prediction index: ${topIndex}`;
-    }
+    const prediction = await model.predict(tensor).data();
 
-    loadModel();
-  </script>
+    // Find highest prediction
+    const topIndex = prediction.indexOf(Math.max(...prediction));
+    const label = labels[topIndex] || `Unknown (${topIndex})`;
+
+    document.getElementById('prediction').innerText = `Prediction: ${label}`;
+  }
+
+  loadModel();
+</script>
 </body>
 </html>
 
