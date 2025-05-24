@@ -54,8 +54,8 @@
 
     async function loadModelAndLabels() {
       try {
-        model = await tf.loadLayersModel('https://CBUTLERGH.github.io/GymImageClassificatioN/model.json');
-        const metadataURL = 'https://CBUTLERGH.github.io/GymImageClassificatioN/metadata.json';
+        model = await tf.loadLayersModel('https://CBUTLERGH.github.io/GymImageClassification/model.json');
+        const metadataURL = 'https://CBUTLERGH.github.io/GymImageClassification/metadata.json';
         const response = await fetch(metadataURL);
         const metadata = await response.json();
         labels = metadata.labels;
