@@ -1,14 +1,89 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Dumbbell Classifier</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.0.0"></script>
+  <title>Dumbbell Scanner</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f5f5f5;
+    }
+    video {
+      width: 320px;
+      height: 240px;
+      border: 2px solid #333;
+      margin-top: 20px;
+    }
+    #prediction {
+      font-size: 20px;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-  <h2>Dumbbell Classifier</h2>
-  <input type="file" accept="image/*" capture="user" onchange="predictImage(event)">
-  <p id="prediction">Prediction will appear here</p>
+  <h1>Dumbbell Scanner</h1>
+  <video id="webcam" autoplay playsinline></video>
+  <div id="prediction">Prediction: Loading...</div>
+
+  <script>
+    let model;
+    let labels = [];
+    let webcamElement = document.getElementById('webcam');
+
+    async function loadModelAndLabels() {
+      model = await tf.loadLayersModel('https://<your-username>.github.io/<repo-name>/model.json');
+      const metadataURL = 'https://<your-username>.github.io/<repo-name>/metadata.json';
+      const response = await fetch(metadataURL);
+      const metadata = await response.json();
+      labels = metadata.labels;
+      console.log("Model and labels loaded");
+    }
+
+    async function setupCamera() {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" }, // Front-facing camera
+        audio: false
+      });
+      webcamElement.srcObject = stream;
+
+      return new Promise((resolve) => {
+        webcamElement.onloadedmetadata = () => {
+          resolve();
+        };
+      });
+    }
+
+    async function predictLoop() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 224;
+      canvas.height = 224;
+      const ctx = canvas.getContext('2d');
+
+      setInterval(() => {
+        ctx.drawImage(webcamElement, 0, 0, 224, 224);
+        const imageData = ctx.getImageData(0, 0, 224, 224);
+        const input = tf.browser.fromPixels(imageData)
+          .toFloat()
+          .expandDims();
+
+        const prediction = model.predict(input);
+        prediction.array().then((scores) => {
+          const topIndex = scores[0].indexOf(Math.max(...scores[0]));
+          const label = labels[topIndex] || `Unknown (${topIndex})`;
+          document.getElementById('prediction').innerText = `Prediction: ${label}`;
+        });
+      }, 1000); // every 1 second
+    }
+
+    async function init() {
+      await loadModelAndLabels();
+      await setupCamera();
+      predictLoop();
+    }
+
+    init();
 
 <script>
   let model;
